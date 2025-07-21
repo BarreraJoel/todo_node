@@ -1,0 +1,1 @@
+export type ConstraintType = "PK" | "FK" | "NOT NULL" | "UNIQUE" | "CHECK" | "DEFAULT";
