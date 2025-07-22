@@ -1,14 +1,16 @@
 import { OperationType } from "../../types/db-type.type";
 
-export class SelectDto {
+export class UpdateDto {
 
+    // UPDATE table SET col=value WHERE col=value
     constructor(
         public cols: string[],
-        public constraints?: {
+        public values: string[],
+        public constraints: {
             key: string,
             operation: OperationType
         }[],
-        public constraintsValue?: string[]
+        public constraintsValue: string[]
     ) { }
 
 }

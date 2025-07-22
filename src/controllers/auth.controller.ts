@@ -18,24 +18,24 @@ export class AuthController {
             const token = await this.authService.login(new LoginDto(result.email, result.password));
 
             if (!token) {
-                return response.status(400).json({
-                    success: true,
-                    message: 'No se pudo loguear',
-                    data: {
-                        token: token
-                    },
-                });
+                throw new Error('No se pudo loguear');
             }
 
             return response.status(200).json({
                 success: true,
                 message: null,
                 data: {
-                    // token: token
-                    token: ""
+                    token: token
                 },
             });
         } catch (error: any) {
+            console.log(error);
+
+            return response.status(500).json({
+                success: false,
+                message: null,
+                data: null,
+            });
         }
 
     }
@@ -45,7 +45,13 @@ export class AuthController {
             const body = request.body;
             const result = RegisterRequest.parse(body);
 
-            if (!(await this.authService.register(new RegisterDto(result.email, result.password, result.first_name, result.last_name)))) {
+            if (! await this.authService.register(
+                new RegisterDto(
+                    result.email,
+                    result.password,
+                    result.first_name,
+                    result.last_name
+                ))) {
                 // return response.json({ message: 'No se pudo registrar' });
                 throw new Error('No se pudo registrar');
             }
@@ -64,7 +70,6 @@ export class AuthController {
 
     public user = async (request: Request, response: Response) => {
         const token = request.headers.authorization?.split(" ")[1];
-
         const user = await this.authService.user(<string>token);
 
         return response.json({

@@ -1,11 +1,13 @@
 import { db } from "../../config/database.config";
 import { CreateTableDto } from "../../dto/db/create-table.dto";
-import { InsertDto } from "../../dto/db/insert.dto";
 import { SelectDto } from "../../dto/db/select.dto";
+import { InsertDto } from "../../dto/db/insert.dto";
+import { UpdateDto } from "../../dto/db/update.dto";
+import { DeleteDto } from "../../dto/db/delete.dto";
 
 export class DatabaseService {
     private connection: any;
-    
+
     constructor() {
         this.initConnection();
     }
@@ -20,52 +22,34 @@ export class DatabaseService {
     }
 
     // CRUD
-    public selectById(tableName: string, cols: string[], id: number) {
-        let stmt = `SELECT `;
 
-        let colsString = "";
-
-        for (let index = 0; index < cols.length; index++) {
-            colsString += `${cols[index]}`;
-            if (cols[index] != cols[cols.length - 1]) {
-                colsString += ", ";
-            }
-        }
-
-        stmt += `${cols} FROM ${tableName} WHERE id=?`;
-        // console.log(stmt);
-
-        return this.connection.execute(stmt, id);
-    }
-
-    public selectByQuery(tableName: string, dto: SelectDto) {
-        let stmt = `SELECT `;
-
+    public async selectAll(tableName: string, dto: SelectDto) {
         let cols = "";
-        let constraints = "";
         let lastIndexCols = dto.cols.indexOf(dto.cols[dto.cols.length - 1]);
-        let lastIndexConstraint = dto.constraintsKey.indexOf(dto.constraintsKey[dto.constraintsKey.length - 1]);
 
         dto.cols.forEach((col: string) => {
             cols += `${col}`;
             cols += dto.cols[lastIndexCols] == col ? "" : ", ";
         });
+        let stmt = `SELECT ${cols} FROM ${tableName}`;
 
-        dto.constraintsKey.forEach((constraint: string) => {
-            constraints += `${constraint}=?`;
-            constraints += dto.constraintsKey[lastIndexConstraint] == constraint ? "" : " AND ";
-        });
+        if (dto.constraints) {
+            let constraints = "";
+            let lastIndexConstraint = dto.constraints.indexOf(dto.constraints[dto.constraints.length - 1]);
 
-        stmt += `${cols} FROM ${tableName} WHERE ${constraints}`;
-        // console.log(stmt);
+            dto.constraints.forEach((constraint) => {
+                constraints += `${constraint.key}${constraint.operation}?`;
+                constraints += dto.constraints?.[lastIndexConstraint] == constraint ? "" : " AND ";
+            });
+            stmt += ` WHERE ${constraints}`;
+            return this.connection.execute(stmt, dto.constraintsValue);
 
-        return this.connection.execute(stmt, dto.constraintsValue);
+        }
+
+        return await this.connection.query(stmt);
     }
 
-    public selectOne(tableName: string, data: any) { }
-
     public async insert(tableName: string, dto: InsertDto) {
-        let stmt = `INSERT INTO ${tableName} `;
         let cols = "";
         let values = "";
         let lastIndexCols = dto.cols.indexOf(dto.cols[dto.cols.length - 1]);
@@ -81,22 +65,50 @@ export class DatabaseService {
             values += dto.values[lastIndexValue] == value ? "" : ", ";
         });
 
-        stmt += `(${cols}) VALUES (${values})`;
-
-        // console.log(stmt);
+        let stmt = `INSERT INTO ${tableName} (${cols}) VALUES (${values})`;
 
         return this.connection.execute(stmt, dto.values);
     }
 
-    public update(tableName: string, data: any) { }
-    public delete(tableName: string, data: any) { }
+    public update(tableName: string, dto: UpdateDto) {
+        let updates = "";
+        let lastIndexCols = dto.cols.indexOf(dto.cols[dto.cols.length - 1]);
+        let constraints = "";
+        let lastIndexConstraint = dto.constraints.indexOf(dto.constraints[dto.constraints.length - 1]);
+
+        dto.cols.forEach((col) => {
+            updates += `${col}=?`;
+            updates += dto.cols[lastIndexCols] == col ? "" : ", ";
+        });
+
+        dto.constraints.forEach((constraint) => {
+            constraints += `${constraint.key}${constraint.operation}?`;
+            constraints += dto.constraints?.[lastIndexConstraint] == constraint ? "" : " AND ";
+        });
+
+        let stmt = `UPDATE ${tableName} SET ${updates} WHERE ${constraints}`;
+        return this.connection.execute(stmt, [...dto.values, ...dto.constraintsValue]);
+    }
+
+    public delete(tableName: string, dto: DeleteDto) {
+        let constraints = "";
+        let lastIndexConstraint = dto.constraints.indexOf(dto.constraints[dto.constraints.length - 1]);
+
+        dto.constraints.forEach((constraint) => {
+            constraints += `${constraint.key}${constraint.operation}?`;
+            constraints += dto.constraints?.[lastIndexConstraint] == constraint ? "" : " AND ";
+        });
+        let stmt = `DELETE FROM ${tableName} WHERE ${constraints}`;
+
+        return this.connection.execute(stmt, dto.constraintsValue);
+    }
 
     // TABLES
     public async checkTable(tableName: string) {
         let stmt = `SHOW TABLES LIKE '${tableName}'`;
         const [rows] = await this.connection.query(stmt);
 
-        return (rows as any[]).length > 0;
+        return rows.length > 0;
     }
 
     public createTable(dto: CreateTableDto) {
@@ -130,15 +142,11 @@ export class DatabaseService {
 
             column += " " + constraints;
             column += dto.structure[lastIndexStructure] == obj ? "" : ", ";
-            console.log(column);
 
             columns += column;
         });
 
         columns += constraintsFinal;
-
-        stmt += `(${columns})`;
-        console.log(stmt);
 
         this.connection.query(stmt);
     }

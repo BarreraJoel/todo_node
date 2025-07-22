@@ -46,8 +46,14 @@ export class JwtService {
      * @returns 
      */
     public async checkTokenExists(token: string) {
-        const [rows] = await this.dbService.selectByQuery('tokens', new SelectDto(
-            ['user_uuid', 'token'], ['token'], [token],
+        const [rows] = await this.dbService.selectAll('tokens', new SelectDto(
+            ['user_uuid', 'token'],
+            [
+                {
+                    key: 'token', operation: '='
+                }
+            ],
+            [token],
         ));
 
         return rows.length > 0;
@@ -65,6 +71,12 @@ export class JwtService {
         ));
 
         return rows;
+    }
+
+    public async select() {
+        // const [rows] = await this.dbService.selectByQuery('tokens');
+
+        // return rows;
     }
 
 

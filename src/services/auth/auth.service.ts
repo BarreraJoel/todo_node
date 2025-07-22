@@ -11,18 +11,12 @@ import { JwtInsertDto } from "../../dto/jwt/jwt-insert.dto";
 @autoInjectable()
 export class AuthService {
 
-    // private dbService: DatabaseService;
-    // private jwtService: JwtService;
-
     constructor(
         private dbService: DatabaseService,
         private jwtService: JwtService,
-    ) {
-        // this.dbService = new DatabaseService();
-    }
+    ) { }
 
     public async login(dto: LoginDto) {
-        // await this.dbService.initConnection();
         const result = await this.checkUserExists(dto.email);
         if (result.length == 0) {
             return false;
@@ -34,9 +28,7 @@ export class AuthService {
 
         const token = this.jwtService.createToken(result[0]);
         const rows = await this.jwtService.insert(new JwtInsertDto(result[0].uuid, token));
-        // console.table(rows);
-        // console.log(rows);
-        
+
         return rows.affectedRows > 0 ? token : null;
     }
 
@@ -45,9 +37,9 @@ export class AuthService {
     }
 
     private async checkUserExists(email: string) {
-        const [rows] = await this.dbService.selectByQuery('users', new SelectDto(
-            ['uuid', 'email', 'password'],
-            ['email'],
+        const [rows] = await this.dbService.selectAll('users', new SelectDto(
+            ['uuid', 'email', 'password', 'first_name', 'last_name'],
+            [{ key: 'email', operation: "=" }],
             [email],
         ));
         return rows;

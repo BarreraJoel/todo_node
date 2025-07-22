@@ -6,6 +6,7 @@ const dbService = new DatabaseService();
 async function initTables() {
     await dbService.initConnection();
     await initAuthTables();
+    await initJobTables();
 
     console.log('Tablas creadas');
     process.exit(0);
@@ -48,5 +49,26 @@ async function initAuthTables() {
 
 }
 
+async function initJobTables() {
+    if (! await dbService.checkTable('jobs')) {
+        dbService.createTable(new CreateTableDto('jobs', [
+            {
+                column: 'uuid',
+                type: 'varchar(100)',
+                constraints: ["NOT NULL", "PK"]
+            },
+            {
+                column: 'user_uuid',
+                type: 'varchar(100)',
+                constraints: ["NOT NULL", "FK"],
+                constraintFkValues: {
+                    fkTable: "users",
+                    fkColumn: "uuid"
+                }
+            },
+            { column: 'name', type: 'varchar(100)', constraints: ["NOT NULL"] },
+        ]));
+    }
+}
 
 initTables();

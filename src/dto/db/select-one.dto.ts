@@ -1,14 +1,14 @@
 import { OperationType } from "../../types/db-type.type";
 
-export class SelectDto {
+export class SelectOneDto {
 
     constructor(
         public cols: string[],
-        public constraints?: {
+        public constraints: {
             key: string,
             operation: OperationType
         }[],
-        public constraintsValue?: string[]
+        public constraintsValue: string[]
     ) { }
 
 }
