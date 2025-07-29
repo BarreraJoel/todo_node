@@ -85,8 +85,12 @@ export class DatabaseService {
             constraints += `${constraint.key}${constraint.operation}?`;
             constraints += dto.constraints?.[lastIndexConstraint] == constraint ? "" : " AND ";
         });
-
+        console.log(dto.values);
+        console.log(dto.constraintsValue);
+        
         let stmt = `UPDATE ${tableName} SET ${updates} WHERE ${constraints}`;
+        console.log(stmt);
+        
         return this.connection.execute(stmt, [...dto.values, ...dto.constraintsValue]);
     }
 
@@ -112,7 +116,6 @@ export class DatabaseService {
     }
 
     public createTable(dto: CreateTableDto) {
-        let stmt = `CREATE TABLE ${dto.tableName} `;
         let lastIndexStructure = dto.structure.indexOf(dto.structure[dto.structure.length - 1]);
         let columns = "";
         let constraintsFinal = "";
@@ -147,7 +150,8 @@ export class DatabaseService {
         });
 
         columns += constraintsFinal;
-
+        let stmt = `CREATE TABLE ${dto.tableName} (${columns})`;
+        
         this.connection.query(stmt);
     }
 

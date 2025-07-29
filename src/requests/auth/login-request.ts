@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-export const LoginRequest = z.object({
+export const LoginRequest = z.strictObject({
     email: z.
         email(),
     password: z.

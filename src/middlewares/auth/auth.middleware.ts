@@ -11,21 +11,21 @@ export class AuthMiddleware {
             next();
         }
 
-        const token = request.headers.authorization?.split(" ")[1];
-        if (!token) {
-            return response.status(400).json({
-                success: false,
-                message: 'Token requerido',
-                data: null
-            });
-        }
-
         try {
-            if (! await this.jwtService.checkTokenExists(token)) {
+            let jwt = "";
+
+            // console.log(`auth: ${!request.headers.authorization?.split(" ")[1]}`);
+
+            if (request.headers.authorization?.split(" ")[1]) {
+                jwt = request.headers.authorization?.split(" ")[1];
+                // console.log('auth');
+            }
+
+            if (! await this.jwtService.checkTokenExists(jwt)) {
                 throw new Error('El token no existe o expiró');
             }
 
-            if (await this.jwtService.check(token)) {
+            if (await this.jwtService.check(jwt)) {
                 next();
             }
         } catch (error: any) {
@@ -39,7 +39,7 @@ export class AuthMiddleware {
                 message = error.message;
             }
 
-            return response.status(400).json({
+            return response.status(401).json({
                 success: false,
                 message: message,
                 data: {

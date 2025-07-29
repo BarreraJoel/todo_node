@@ -44,6 +44,11 @@ async function initAuthTables() {
                 type: 'varchar(512)',
                 constraints: ["NOT NULL", "UNIQUE"]
             },
+            {
+                column: 'token_refresh',
+                type: 'varchar(512)',
+                constraints: ["NOT NULL", "UNIQUE"]
+            },
         ]));
     }
 

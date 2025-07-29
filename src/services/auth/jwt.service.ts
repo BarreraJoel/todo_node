@@ -3,8 +3,10 @@ import { autoInjectable } from "tsyringe";
 import { jwt } from "../../config/jwt.config";
 import { SelectDto } from "../../dto/db/select.dto";
 import { DatabaseService } from "../database/database.service";
-import { JwtInsertDto } from "../../dto/jwt/jwt-insert.dto";
+import { InsertJwtDto } from "../../dto/jwt/insert-jwt.dto";
 import { InsertDto } from "../../dto/db/insert.dto";
+import { UpdateJwtDto } from "../../dto/jwt/update-jwt.dto";
+import { UpdateDto } from "../../dto/db/update.dto";
 
 @autoInjectable()
 export class JwtService {
@@ -14,7 +16,7 @@ export class JwtService {
     /**
      * Genera un token de JWT
      * @param data información que se guardará en el token
-     * @param expiresIn expresado en segundos
+     * @param expiresIn expresado en minutos
      * @returns el token generado
      */
     public createToken(data: any, expiresIn?: number) {
@@ -36,6 +38,8 @@ export class JwtService {
      * @returns 
      */
     public async check(token: string) {
+        // console.log(token + "check");
+
         const decoded = jwtObj.verify(token, jwt.secret);
         return decoded ?? null;
     }
@@ -64,20 +68,38 @@ export class JwtService {
      * @param dto 
      * @returns 
      */
-    public async insert(dto: JwtInsertDto) {
+    public async insert(dto: InsertJwtDto) {
         const [rows] = await this.dbService.insert('tokens', new InsertDto(
-            ['uuid', 'user_uuid', 'token'],
-            [dto.uuid, dto.user_uuid, dto.token]
+            ['uuid', 'user_uuid', 'token', 'token_refresh'],
+            [dto.uuid, dto.user_uuid, dto.token, dto.token_refresh]
         ));
 
         return rows;
     }
 
-    public async select() {
-        // const [rows] = await this.dbService.selectByQuery('tokens');
-
-        // return rows;
+    public async update(dto: UpdateJwtDto) {
+        const [rows] = await this.dbService.update('tokens', new UpdateDto(
+            ['token'],
+            [dto.jwt],
+            [{ key: 'user_uuid', operation: "=" }],
+            [dto.user_uuid]
+        ));
+        return rows.affectedRows > 0;
     }
 
+    public async refresh(tokenRefresh: string) {
+        const user = await this.check(tokenRefresh);
+        console.log(user);
+        
+        if (user) {
+            const token = this.createToken(user.data, 10);
+            if (await this.update(new UpdateJwtDto(
+                user.data.uuid, token
+            ))) {
+                return token;
+            }
+        }
+        return false;
+    }
 
 }

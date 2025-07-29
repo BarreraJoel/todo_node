@@ -23,10 +23,12 @@ export class JobService {
     public async selectOne(dto: SelectOneJobDto) {
         const [rows] = await this.dbService.selectAll('jobs', new SelectDto(
             ['*'],
-            [{ key: 'uuid', operation: "=" }],
-            [dto.uuid]
+            dto.constraints,
+            dto.constraintsValue
+            // [{ key: 'uuid', operation: "=" }],
+            // [dto.]
         ));
-        return rows[0];
+        return rows;
     }
 
     public async insert(dto: InsertJobDto) {

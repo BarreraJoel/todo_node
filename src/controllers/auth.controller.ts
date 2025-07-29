@@ -3,8 +3,8 @@ import { AuthService } from "../services/auth/auth.service";
 import { LoginDto } from "../dto/auth/login.dto";
 import { RegisterDto } from "../dto/auth/register.dto";
 import { autoInjectable } from "tsyringe";
-import { LoginRequest } from "../requests/auth/loginRequest";
-import { RegisterRequest } from "../requests/auth/registerRequest";
+import { LoginRequest } from "../requests/auth/login-request";
+import { RegisterRequest } from "../requests/auth/register-request";
 
 @autoInjectable()
 export class AuthController {
@@ -14,18 +14,18 @@ export class AuthController {
     public login = async (request: Request, response: Response) => {
         try {
             const body = request.body;
-            const result = LoginRequest.parse(body);
-            const token = await this.authService.login(new LoginDto(result.email, result.password));
+            const validated = LoginRequest.parse(body);
+            const tokens = await this.authService.login(new LoginDto(validated.email, validated.password));
 
-            if (!token) {
+            if (!tokens) {
                 throw new Error('No se pudo loguear');
             }
 
             return response.status(200).json({
                 success: true,
-                message: null,
+                message: 'Login exitoso',
                 data: {
-                    token: token
+                    tokens: tokens
                 },
             });
         } catch (error: any) {
@@ -69,8 +69,13 @@ export class AuthController {
     }
 
     public user = async (request: Request, response: Response) => {
-        const token = request.headers.authorization?.split(" ")[1];
-        const user = await this.authService.user(<string>token);
+        let jwt = null;
+
+        if (request.headers.authorization) {
+            jwt = request.headers.authorization?.split(" ")[1];
+            console.log('auth');
+        }
+        const user = await this.authService.user(<string>jwt);
 
         return response.json({
             success: true,

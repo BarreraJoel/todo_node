@@ -1,5 +1,5 @@
 require('dotenv').config();
 
-export const app = {
+export const appConfig = {
     port: process.env.APP_PORT ?? 3000,
 };

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-export const RegisterRequest = z.object({
+export const RegisterRequest = z.strictObject({
     email: z
         .email(),
     password: z

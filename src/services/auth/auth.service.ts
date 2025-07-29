@@ -6,7 +6,7 @@ import { RegisterDto } from "../../dto/auth/register.dto";
 import { DatabaseService } from "../database/database.service";
 import { JwtService } from "./jwt.service";
 import { compareSync } from "bcryptjs";
-import { JwtInsertDto } from "../../dto/jwt/jwt-insert.dto";
+import { InsertJwtDto } from "../../dto/jwt/insert-jwt.dto";
 
 @autoInjectable()
 export class AuthService {
@@ -17,19 +17,20 @@ export class AuthService {
     ) { }
 
     public async login(dto: LoginDto) {
-        const result = await this.checkUserExists(dto.email);
-        if (result.length == 0) {
+        const user = await this.checkUserExists(dto.email);
+        if (user.length == 0) {
             return false;
         }
 
-        if (! await this.checkPassword(result[0].password, dto.password)) {
+        if (! await this.checkPassword(user[0].password, dto.password)) {
             throw new Error('La contraseña es inválida');
         }
 
-        const token = this.jwtService.createToken(result[0]);
-        const rows = await this.jwtService.insert(new JwtInsertDto(result[0].uuid, token));
+        const token = this.jwtService.createToken(user[0], 10);
+        const tokenRefresh = this.jwtService.createToken(user[0], 60 * 24);
+        const rows = await this.jwtService.insert(new InsertJwtDto(user[0].uuid, token, tokenRefresh));
 
-        return rows.affectedRows > 0 ? token : null;
+        return rows.affectedRows > 0 ? { jwt: token, jwtr: tokenRefresh } : null;
     }
 
     private async checkPassword(passwordHashed: string, passwordCheck: string) {
